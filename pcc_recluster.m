@@ -1,5 +1,5 @@
 % dataset name
-dataset = 'dynamic_map_phi_reordered_2.csv';
+dataset = 'K-Means_dynamic_map_phi_1_reordered.csv';
 % read the dataset and convert it to PCC format
 dynamicmap = read_data(dataset);
 X = table2array(dynamicmap(:,1:2));
@@ -76,8 +76,12 @@ for k_index=1:size(k_values,2)
     writetable(dynamicmap,output_filename)
 
     % plot with gnuplot
-    last_underscore_pos = find(input_filename_no_ext == '_', 1, 'last'); 
-    phi = extractAfter(input_filename_no_ext, last_underscore_pos);
-    gnuplot_command = "d:\tools\gnuplot\bin\gnuplot -c plot_map.gp results/" + input_filename_no_ext + "_k=" + k + ".csv results/" + input_filename_no_ext + "_k=" + k + ".png " + phi;
+    tokens = regexp(input_filename_no_ext, 'phi_(\d+)', 'tokens');
+    if ~isempty(tokens)
+        phi = str2double(tokens{1}{1});
+    else
+        phi = 0;
+    end  
+    gnuplot_command = "d:\tools\gnuplot\bin\gnuplot -c plot_map_discrete.gp results/" + input_filename_no_ext + "_k=" + k + ".csv results/" + input_filename_no_ext + "_k=" + k + ".png " + phi;
     system(gnuplot_command);
 end    
