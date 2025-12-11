@@ -19,7 +19,8 @@ log_filename = "logs\" + input_filename_no_ext + ".log";
 fileID = fopen(log_filename,'w');
 fclose(fileID);
 
-k_values = [4 8 12 20 24];
+%k_values = [4 8 12 20 24];
+k_values = 24;
 
 for k_index=1:size(k_values,2)
     % PCC k-nearest neighbors to generate the graph
@@ -51,6 +52,9 @@ for k_index=1:size(k_values,2)
     % get the new labels
     [~,owner] = max(owndeg_acc,[],2);
 
+    % calculate the soft labels
+    owndeg = owndeg_acc*0.001;
+
     elapsedTime = toc;
     
     % Converte o tempo decorrido em horas, minutos e segundos
@@ -75,6 +79,10 @@ for k_index=1:size(k_values,2)
     dynamicmap(:,4) = array2table(owner-1);
     writetable(dynamicmap,output_filename)
 
+    % write soft labels to a CSV file
+    output_filename = "results\" + input_filename_no_ext + "_k=" + k + "_softlabels.csv";    
+    writetable(array2table(owndeg), output_filename);
+    
     % plot with gnuplot
     tokens = regexp(input_filename_no_ext, 'phi_(\d+)', 'tokens');
     if ~isempty(tokens)
