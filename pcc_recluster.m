@@ -1,5 +1,5 @@
 % dataset name
-dataset = 'K-Means_dynamic_map_phi_2_reordered.csv';
+dataset = 'K-Means_dynamic_map_phi_1_reordered.csv';
 % read the dataset and convert it to PCC format
 dynamicmap = read_data(dataset);
 X = table2array(dynamicmap(:,1:2));
