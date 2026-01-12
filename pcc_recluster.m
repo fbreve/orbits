@@ -4,7 +4,6 @@ dataset = 'K-Means_dynamic_map_phi_1_reordered.csv';
 dynamicmap = read_data(dataset);
 X = table2array(dynamicmap(:,1:2));
 label = table2array(dynamicmap(:,4)+1);
-
 % set the seed for reproducibility of the folds
 rng('default')
 % split the dataset in 10 folds with 100 repetitions
@@ -12,21 +11,17 @@ n = size(X,1);
 for j=1:100
     cv(j) = cvpartition(n,"KFold",10);
 end
-
 % create log file
 [~, input_filename_no_ext] = fileparts(dataset);
 log_filename = "logs\" + input_filename_no_ext + ".log";
 fileID = fopen(log_filename,'w');
 fclose(fileID);
-
 %k_values = [4 8 12 20 24];
 k_values = 24;
-
 for k_index=1:size(k_values,2)
     % PCC k-nearest neighbors to generate the graph
     k = k_values(k_index);
     fprintf("Running PCC for k=%d.\n",k)
-
     tic;
     % itialize the accumulated domain count
     owndeg_acc = zeros(n,max(label));
@@ -37,7 +32,6 @@ for k_index=1:size(k_values,2)
     % Wait bar implementation
     fprintf('Progress:');
     fprintf(['\n' repmat('.',1,100) '\n\n']);
-
     % for each repetition and each fold, run PCC and get the accumulated
     % domains. No early stop to get more reliable results.
     parfor j=1:100        
@@ -48,13 +42,10 @@ for k_index=1:size(k_values,2)
         end
         fprintf('\b|\n');
     end
-
     % get the new labels
     [~,owner] = max(owndeg_acc,[],2);
-
     % calculate the soft labels
     owndeg = owndeg_acc*0.001;
-
     elapsedTime = toc;
     
     % Converte o tempo decorrido em horas, minutos e segundos
@@ -63,22 +54,35 @@ for k_index=1:size(k_values,2)
     seconds = mod(elapsedTime, 60);
     time_string = sprintf('Time spent: %d hours, %d minutes and %.2f seconds.\n', hours, minutes, seconds);
     fprintf(time_string);
-
     % count how many elements were relabeled and show
     relabeled_count = sum(owner ~= label);
     fprintf("Results: k=%d - %d elements re-labeled.\n",k,relabeled_count)
     
+    % === ARI e Matriz de Confusão ===
+    % labels antigos: label
+    % labels novos: owner
+    % (label já está +1, owner também está em 1..K)
+    C = confusionmat(label, owner);                     % [web:18]
+    ARI = adjustedRandIndex(label, owner);              % sua função .m
+
+    fprintf('Confusion matrix (rows = label, cols = relabel):\n');
+    disp(C);
+    fprintf('Adjusted Rand Index (ARI): %g\n', ARI);
+
     % write log file
     fileID = fopen(log_filename,'a');
     fprintf(fileID,time_string);
     fprintf(fileID,"Results: k=%d - %d elements re-labeled.\n",k,relabeled_count);
+    fprintf(fileID,"Adjusted Rand Index (ARI): %g\n", ARI);
+    fprintf(fileID,"Confusion matrix (rows = label, cols = relabel):\n");
+    fprintf(fileID,'%s\n', mat2str(C));
+    fprintf(fileID,"\n");
     fclose(fileID);
-
+    
     % write the results to a CSV file   
     output_filename = "results\" + input_filename_no_ext + "_k=" + k + ".csv";
     dynamicmap(:,4) = array2table(owner-1);
     writetable(dynamicmap,output_filename)
-
     % write soft labels to a CSV file
     output_filename = "results\" + input_filename_no_ext + "_k=" + k + "_softlabels.csv";    
     writetable(array2table(owndeg), output_filename);
@@ -92,4 +96,4 @@ for k_index=1:size(k_values,2)
     end  
     gnuplot_command = "d:\tools\gnuplot\bin\gnuplot -c plot_map_discrete.gp results/" + input_filename_no_ext + "_k=" + k + ".csv results/" + input_filename_no_ext + "_k=" + k + ".png " + phi;
     system(gnuplot_command);
-end    
+end

@@ -1,0 +1,7 @@
+==== Avaliação em 12-Jan-2026 14:26:27 ====
+Total: 22288
+Re-rotuladas: 978 (4.3880 %)
+ARI: 0.881361
+Matriz de confusão (linhas = original, colunas = PCC):
+[9315 367 3 0;262 5222 129 12;4 137 4312 0;1 63 0 2461]
+

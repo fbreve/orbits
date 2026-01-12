@@ -1,0 +1,7 @@
+==== Avaliação phi_2 em 12-Jan-2026 19:11:24 ====
+Total: 22288
+Re-rotuladas: 998 (4.4777 %)
+ARI: 0.875158
+Matriz de confusão (linhas = original, colunas = PCC):
+[8804 369 1 9;355 5248 82 12;0 112 4795 0;14 44 0 2443]
+
