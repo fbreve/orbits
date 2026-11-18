@@ -35,8 +35,10 @@ class RowAlignmentTests(unittest.TestCase):
             validate_row_alignment(self.original, self.refined.iloc[:2])
 
     def test_longer_refined_table_raises(self):
-        extra = pd.concat([self.refined, self.refined.iloc[:1]], ignore_index=True)
-        with self.assertRaisesRegex(ValueError, "duplicate orbit identifiers"):
+        new_orbit = self.refined.iloc[:1].copy()
+        new_orbit.loc[new_orbit.index[0], "file_name"] = "orbit-003"
+        extra = pd.concat([self.refined, new_orbit], ignore_index=True)
+        with self.assertRaisesRegex(ValueError, "Row count mismatch"):
             validate_row_alignment(self.original, extra)
 
     def test_duplicate_identifier_raises(self):
