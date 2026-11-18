@@ -14,6 +14,45 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix, adjusted_rand_score  # [web:18][web:19]
 
+def validate_row_alignment(original: pd.DataFrame, refined: pd.DataFrame) -> int:
+    """Reject comparisons that would silently truncate or misalign orbit records.
+
+    This validates sample identity in the original order; it deliberately
+    does not reorder rows, remap cluster IDs, or alter scientific results.
+    """
+    required = ("file_name", "cluster_index")
+    for name, frame in (("original", original), ("refined", refined)):
+        missing = [column for column in required if column not in frame.columns]
+        if missing:
+            raise ValueError(f"{name} CSV lacks required columns: {missing}")
+        identifiers = frame["file_name"]
+        if identifiers.isna().any():
+            raise ValueError(f"{name} CSV has missing orbit identifiers")
+        if identifiers.astype(str).str.strip().eq("").any():
+            raise ValueError(f"{name} CSV has blank orbit identifiers")
+        if identifiers.duplicated().any():
+            raise ValueError(f"{name} CSV has duplicate orbit identifiers")
+
+    if len(original) != len(refined):
+        raise ValueError(
+            f"Row count mismatch: original={len(original)}, refined={len(refined)}"
+        )
+
+    # Compare row values, not DataFrame index labels: CSV rows define identity.
+    mismatches = (
+        original["file_name"].to_numpy() != refined["file_name"].to_numpy()
+    )
+    if mismatches.any():
+        first = int(np.flatnonzero(mismatches)[0])
+        raise ValueError(
+            f"Orbit identifier/order mismatch at data row {first + 1}: "
+            f"original={original['file_name'].iloc[first]!r}, "
+            f"refined={refined['file_name'].iloc[first]!r}"
+        )
+
+    return len(original)
+
+
 def evaluate_phi(phi: int):
     orig_dataset   = f'K-Means_dynamic_map_phi_{phi}_reordered.csv'
     result_dataset = f'results/K-Means_dynamic_map_phi_{phi}_reordered_k=24.csv'
@@ -22,18 +61,17 @@ def evaluate_phi(phi: int):
     print(f'Original: {orig_dataset}')
     print(f'Resultado: {result_dataset}')
 
-    # Ler CSVs (colunas: semimajor_axis,eccentricity,file_name,cluster_index) [file:1][file:3]
+    # Ler CSVs (colunas: semimajor_axis,eccentricity,file_name,cluster_index)
     Torig   = pd.read_csv(orig_dataset)
     Tresult = pd.read_csv(result_dataset)
 
-    # coluna 4 (índice 3) = cluster_index em 0..K-1, converte para 1..K para ficar equivalente ao MATLAB
-    orig_label   = Torig.iloc[:, 3].to_numpy(dtype=int) + 1
-    result_label = Tresult.iloc[:, 3].to_numpy(dtype=int) + 1
+    # Check row identities and equal lengths before comparing labels.
+    # Unlike the legacy min(length) behavior, never silently truncate.
+    n = validate_row_alignment(Torig, Tresult)
 
-    # garantir mesmo tamanho
-    n = min(len(orig_label), len(result_label))
-    orig_label   = orig_label[:n]
-    result_label = result_label[:n]
+    # The existing numerical convention is retained: labels 0..K-1 -> 1..K.
+    orig_label   = Torig["cluster_index"].to_numpy(dtype=int) + 1
+    result_label = Tresult["cluster_index"].to_numpy(dtype=int) + 1
 
     # órbitas re-rotuladas
     relabeled = (orig_label != result_label)

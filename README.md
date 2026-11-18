@@ -63,7 +63,7 @@ python evaluate_cluster_relabeling.py
 
 It compares the two original CSVs against `results/K-Means_dynamic_map_phi_{1,2}_reordered_k=24.csv` and prints the relabel counts, confusion matrices and ARI. **Caution:** it appends to `logs/phi_*_eval_python.log`; run it on a separate copy if you want to preserve the archived logs.
 
-This comparison relies on **matching row order**, without an explicit alignment by `file_name`, and silently truncates to the shorter input if sizes differ. Check matching identifiers before treating a rerun as independently validated. The same caution applies to the MATLAB comparison.
+The **Python evaluator on this branch** now requires the original and refined tables to have the same length and identical, non-missing, unique `file_name` identifiers in the same order. It stops rather than silently comparing mismatched rows. The separate **MATLAB evaluator still compares by row position and can truncate mismatched lengths**; it has not been changed. See [REPRODUCIBILITY.md](REPRODUCIBILITY.md) and the regression tests in `tests/`.
 
 **Do not launch the long PCC run solely as a documentation check.** The MATLAB simulation uses 100 repetitions of 10 folds, `maxiter=50000`, and disables early stopping. It needs a compatible PCC implementation and a parallel MATLAB environment; the exact historical software configuration is not pinned. See [REPRODUCIBILITY.md](REPRODUCIBILITY.md).
 

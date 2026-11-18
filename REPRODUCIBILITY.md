@@ -8,7 +8,7 @@ The original outputs are kept intact on `main` and in [`archive/2026-01-12-resul
 
 | Workflow | Main entry point | Required inputs | Status |
 | --- | --- | --- | --- |
-| Python comparison of old vs. new labels | `evaluate_cluster_relabeling.py` | Both root `K-Means_*_reordered.csv` files and matching `results/*_k=24.csv` | All named files are **tracked**. Runtime not retested. |
+| Python comparison of old vs. new labels | `evaluate_cluster_relabeling.py` | Both root `K-Means_*_reordered.csv` files and matching `results/*_k=24.csv` | **Validated on all 22,288 records for both angles**, including row identifiers, confusion matrices, relabel counts and ARI. No PCC rerun. |
 | MATLAB comparison | `evaluate_cluster_relabeling.m` | Same CSV files and `adjustedRandIndex.m` | All named files **tracked**. Requires suitable MATLAB toolboxes; runtime not retested. |
 | PCC on 2D orbit conditions | `pcc_recluster.m` | Root CSV, external `pcc` / `pcc_buildgraph` functions | Data **tracked**, PCC dependency **not vendored or pinned**. No new run performed. |
 | PCC on time series | `pcc_recluster_series.m` | `orbit_series.mat` plus `dynamic_map_phi_1.csv` | First tracked, second **absent**. |
@@ -46,6 +46,14 @@ python evaluate_cluster_relabeling.py
 
 This command **does not rerun PCC**; it compares checked-in labels. It appends evaluation logs to `logs/` and may update tracked files. Work from a copy or discard intentionally generated changes. No exact package versions or successful new execution are claimed.
 
+### Stored-output regression validation — November 18, 2026
+
+The experimental Python evaluator was checked against the complete **22,288-row φ₁ and φ₂ CSV pairs**, after first comparing the original and refined orbit identifiers and verifying that all IDs are unique and in the same order.
+
+A new automated integration test, `tests/test_real_orbit_data.py`, checks the saved relabel totals, entire 4×4 confusion matrices and Adjusted Rand Index for both angles against the historical logs. The existing eight synthetic tests cover row misalignment and invalid identities. **Nine tests passed on GitHub Actions** with Python 3.12; no scientific files were modified during the workflow.
+
+This validation confirms **stored-output comparison**, not rerunning the historical 100×10 PCC experiments or independently reproducing the neural/astronomical feature extraction pipeline.
+
 ## Original configured PCC study
 
 The current `pcc_recluster.m` script:
@@ -64,8 +72,8 @@ The script's output names are assembled from a dataset stem and `k`. Existing ou
 
 ## Validation and evaluation cautions
 
-- The MATLAB and Python evaluation scripts select column 4 from each CSV **by position** and compare the resulting arrays without checking `file_name` alignment.
-- Both scripts take `min(original_row_count, result_row_count)` and truncate longer inputs. This can hide missing or reordered orbit records.
+- **Python evaluator (PR #1):** checks `file_name` existence, uniqueness, non-null values, equal table lengths and identical identifier order before comparing `cluster_index` values. It raises an error on mismatch and no longer truncates input records.
+- **MATLAB evaluator (unchanged):** still compares the column-4 labels by row position and uses `min(original_row_count, result_row_count)`, potentially truncating longer tables. This needs a separate MATLAB-validated correction.
 - Numeric relabel count assumes labels have comparable IDs; **ARI is invariant to label permutation**, but raw relabel count and confusion matrices are not.
 - The MATLAB and Python implementations both write logs in append mode. Preserve the original `logs/` as evidence, rather than treating each subsequent append as the original published output.
 - The absolute `d:\tools\gnuplot` path, `logs\...` and `results\...` paths may not be portable outside Windows.

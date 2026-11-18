@@ -1,0 +1,38 @@
+name: Validate orbital clustering evaluation
+
+on:
+  push:
+    branches:
+      - main
+      - experiment/evaluation-row-alignment
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out stored orbital results
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install comparison dependencies
+        run: |
+          python -m pip install --disable-pip-version-check numpy==2.3.5 pandas==2.2.3 scikit-learn==1.8.0
+
+      - name: Run synthetic and archived-data regressions
+        run: python -m unittest discover -s tests -v
+
+      - name: Verify scientific files were not modified
+        run: |
+          git diff --exit-code -- '*.csv' '*.mat' '*.png' '*.log' || {
+            echo 'Tracked scientific artifacts unexpectedly modified'
+            exit 1
+          }
