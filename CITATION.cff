@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: "Please cite the 2026 Neural Computing and Applications article when using the orbital clustering and PCC-refinement research in this repository."
+type: software
+title: "Orbits: Particle Competition and Cooperation refinement of synthetic Saturnian orbital clusters"
+authors:
+  - family-names: Breve
+    given-names: "Fabricio Aparecido"
+repository-code: "https://github.com/fbreve/orbits"
+url: "https://github.com/fbreve/orbits"
+keywords:
+  - "Saturn satellite orbital dynamics"
+  - "synthetic orbital time series"
+  - "Particle Competition and Cooperation"
+  - "outlier repositioning"
+  - "graph diffusion"
+  - "cluster refinement"
+  - "MATLAB"
+preferred-citation:
+  type: article
+  title: "Clustering astronomical orbital synthetic data using advanced feature extraction and dimensionality reduction techniques"
+  authors:
+    - family-names: Marinho
+      given-names: "Eraldo Pereira"
+    - family-names: "Callegari Junior"
+      given-names: Nelson
+    - family-names: Breve
+      given-names: "Fabricio Aparecido"
+    - family-names: Ranieri
+      given-names: "Caetano Mazzoni"
+  journal: "Neural Computing and Applications"
+  volume: 38
+  year: 2026
+  doi: "10.1007/s00521-026-12057-4"
