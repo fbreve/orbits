@@ -44,13 +44,13 @@ python -m pip install numpy pandas scikit-learn
 python evaluate_cluster_relabeling.py
 ```
 
-This command **does not rerun PCC**; it compares checked-in labels. It appends evaluation logs to `logs/` and may update tracked files. Work from a copy or discard intentionally generated changes. No exact package versions or successful new execution are claimed.
+This command **does not rerun PCC**; it compares checked-in labels. It appends evaluation logs to `logs/` and may update tracked files. Work from a copy or discard intentionally generated changes. This command has not been revalidated as a standalone historical run; the automated, read-only comparison regression uses dependency versions pinned in `.github/workflows/validate-orbit-evaluation.yml`.
 
 ### Stored-output regression validation — November 18, 2026
 
-The experimental Python evaluator was checked against the complete **22,288-row φ₁ and φ₂ CSV pairs**, after first comparing the original and refined orbit identifiers and verifying that all IDs are unique and in the same order.
+The Python evaluator was checked against the complete **22,288-row φ₁ and φ₂ CSV pairs**, after first comparing the original and refined orbit identifiers and verifying that all IDs are unique and in the same order.
 
-A new automated integration test, `tests/test_real_orbit_data.py`, checks the saved relabel totals, entire 4×4 confusion matrices and Adjusted Rand Index for both angles against the historical logs. The existing eight synthetic tests cover row misalignment and invalid identities. **Nine tests passed on GitHub Actions** with Python 3.12; no scientific files were modified during the workflow.
+A new automated integration test, `tests/test_real_orbit_data.py`, checks the saved relabel totals, entire 4×4 confusion matrices and Adjusted Rand Index for both angles against the historical logs. The ten synthetic tests cover row misalignment, invalid identities, empty identifiers and distinct DataFrame indexes. **All eleven tests passed on GitHub Actions** with Python 3.12; no scientific files were modified during the workflow.
 
 This validation confirms **stored-output comparison**, not rerunning the historical 100×10 PCC experiments or independently reproducing the neural/astronomical feature extraction pipeline.
 
@@ -72,7 +72,7 @@ The script's output names are assembled from a dataset stem and `k`. Existing ou
 
 ## Validation and evaluation cautions
 
-- **Python evaluator (PR #1):** checks `file_name` existence, uniqueness, non-null values, equal table lengths and identical identifier order before comparing `cluster_index` values. It raises an error on mismatch and no longer truncates input records.
+- **Python evaluator (merged PR #1):** checks `file_name` existence, uniqueness, non-null/non-blank values, equal table lengths and identical identifier order before comparing `cluster_index` values. It raises an error on mismatch and no longer truncates input records.
 - **MATLAB evaluator (unchanged):** still compares the column-4 labels by row position and uses `min(original_row_count, result_row_count)`, potentially truncating longer tables. This needs a separate MATLAB-validated correction.
 - Numeric relabel count assumes labels have comparable IDs; **ARI is invariant to label permutation**, but raw relabel count and confusion matrices are not.
 - The MATLAB and Python implementations both write logs in append mode. Preserve the original `logs/` as evidence, rather than treating each subsequent append as the original published output.
