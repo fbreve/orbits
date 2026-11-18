@@ -1,1 +1,23 @@
+# Historical local archive deliberately excluded by the original repository
 series.7z
+
+# Python environment/cache artifacts
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# MATLAB/Octave autosaves and editor files
+*.asv
+*.m~
+*.autosave
+
+# Operating-system temporary files
+.DS_Store
+Thumbs.db
+*.swp
+
+# Keep the original tracked logs, CSVs, PNG figures, and MATLAB .mat
+# files under version control as scientific evidence. Do not broadly
+# ignore logs/, results/, *.csv, or *.mat.
