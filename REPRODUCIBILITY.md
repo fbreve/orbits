@@ -27,7 +27,7 @@ Note: `calculate_dtw_matrix.m` computes a dense symmetric distance matrix over a
 The sources use:
 
 - MATLAB table/data import, `cvpartition`, `confusionmat`, `parfor`, `dtw` and `writetable`/`writematrix`.
-- A compatible graph-based **PCC** implementation providing `pcc()` and `pcc_buildgraph()`. This code is **not included** here. The exact source commit, MEX build, toolbox installation and version used for the stored results are not pinned.
+- A compatible graph-based **PCC** implementation providing `pcc()` and `pcc_buildgraph()`: see [the MATLAB/C-MEX PCC repository](https://github.com/fbreve/Particle-Competition-and-Cooperation), which contains both functions. The code is **not vendored** into `orbits`, and the exact source commit, MEX build, toolbox installation and version used for the stored results are **not pinned**. Do not assume its current `master` reproduces the archived output.
 - Parallel execution support for `parfor`; MATLAB's Parallel Computing Toolbox is required for supported parallel execution, and other functions may require additional toolboxes.
 - Gnuplot for plot generation. The current `pcc_recluster.m` contains a hard-coded Windows executable path `d:\tools\gnuplot\bin\gnuplot`; users on other installations must adapt this path if they choose to rerun and create figures.
 

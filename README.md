@@ -4,9 +4,12 @@ This repository preserves **MATLAB/Python scripts, intermediate data, figures, l
 
 > **Eraldo Pereira Marinho, Nelson Callegari Junior, Fabricio Aparecido Breve, and Caetano Mazzoni Ranieri.** "Clustering astronomical orbital synthetic data using advanced feature extraction and dimensionality reduction techniques." *Neural Computing and Applications*, **38**, article **340** (2026). Published April 22, 2026. [doi:10.1007/s00521-026-12057-4](https://doi.org/10.1007/s00521-026-12057-4).
 
-[Published article](https://doi.org/10.1007/s00521-026-12057-4) · [arXiv:2603.13177](https://arxiv.org/abs/2603.13177) · [Main feature-extraction/clustering code repository](https://github.com/epmarinho/ts-saturn-orbits) · [Citation metadata](CITATION.cff)
+[Published article](https://doi.org/10.1007/s00521-026-12057-4) · [arXiv:2603.13177](https://arxiv.org/abs/2603.13177) · [Main feature-extraction/clustering code repository](https://github.com/epmarinho/ts-saturn-orbits) · [PCC MATLAB/MEX implementation](https://github.com/fbreve/Particle-Competition-and-Cooperation) · [Citation metadata](CITATION.cff) · [BibTeX](CITATION.bib)
 
 **Scope:** this is a **supplementary research repository** focused on the PCC-based refinement of orbital clusters, plotting, evaluation, and related intermediate results. **It does not independently package the complete feature extraction, dimensionality reduction, clustering, or original orbit simulation pipeline.**
+
+**PCC MATLAB/MEX implementation:** the external `pcc()` and `pcc_buildgraph()` functions used by the MATLAB scripts are available in [fbreve/Particle-Competition-and-Cooperation](https://github.com/fbreve/Particle-Competition-and-Cooperation). This is the relevant MATLAB/C-MEX codebase, **not the separate Python port**. The exact commit, MEX binary and environment used to generate the archived results have not been identified; current upstream code is **not** claimed to reproduce the historical experiment. See [REPRODUCIBILITY.md](REPRODUCIBILITY.md).
+
 
 ## Scientific context
 
@@ -83,7 +86,38 @@ The repository contains an existing [Apache License 2.0](LICENSE), applicable to
 
 The journal article is open access under its own **CC BY 4.0** terms, which are distinct from the software and data in this repository.
 
-For scientific citation, use the **2026 journal article**; see [`CITATION.cff`](CITATION.cff).
+For scientific citation of the orbital study, use the **2026 journal article** (also the preferred reference in [`CITATION.cff`](CITATION.cff)). When discussing or reusing the underlying PCC algorithm or MATLAB/MEX implementation, also cite the **original 2012 PCC paper**. Both entries can be copied from [`CITATION.bib`](CITATION.bib):
+
+**Orbital clustering article (2026)**
+
+```bibtex
+@article{marinho2026clustering,
+  author  = {Marinho, Eraldo Pereira and Callegari Junior, Nelson and Breve, Fabricio Aparecido and Ranieri, Caetano Mazzoni},
+  title   = {Clustering Astronomical Orbital Synthetic Data Using Advanced Feature Extraction and Dimensionality Reduction Techniques},
+  journal = {Neural Computing and Applications},
+  volume  = {38},
+  year    = {2026},
+  note    = {Article 340},
+  doi     = {10.1007/s00521-026-12057-4},
+  url     = {https://doi.org/10.1007/s00521-026-12057-4}
+}
+```
+
+**Original PCC algorithm (2012)**
+
+```bibtex
+@article{breve2012particle,
+  author  = {Breve, Fabricio Aparecido and Zhao, Liang and Quiles, Marcos Gon{\\c{c}}alves and Pedrycz, Witold and Liu, Jiming},
+  title   = {Particle Competition and Cooperation in Networks for Semi-Supervised Learning},
+  journal = {IEEE Transactions on Knowledge and Data Engineering},
+  volume  = {24},
+  number  = {9},
+  pages   = {1686--1698},
+  year    = {2012},
+  doi     = {10.1109/TKDE.2011.119},
+  url     = {https://doi.org/10.1109/TKDE.2011.119}
+}
+```
 
 ## Validation status (November 18, 2026)
 
