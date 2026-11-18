@@ -53,6 +53,17 @@ class RowAlignmentTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing orbit identifiers"):
             validate_row_alignment(self.original, changed)
 
+    def test_blank_identifier_raises(self):
+        changed = self.refined.copy()
+        changed.loc[1, "file_name"] = "   "
+        with self.assertRaisesRegex(ValueError, "blank orbit identifiers"):
+            validate_row_alignment(self.original, changed)
+
+    def test_same_ids_with_different_dataframe_indexes_pass(self):
+        changed = self.refined.copy()
+        changed.index = [100, 101, 102]
+        self.assertEqual(validate_row_alignment(self.original, changed), 3)
+
     def test_missing_required_column_raises(self):
         changed = self.refined.drop(columns=["file_name"])
         with self.assertRaisesRegex(ValueError, "required columns"):

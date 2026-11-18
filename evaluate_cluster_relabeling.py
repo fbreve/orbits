@@ -25,9 +25,12 @@ def validate_row_alignment(original: pd.DataFrame, refined: pd.DataFrame) -> int
         missing = [column for column in required if column not in frame.columns]
         if missing:
             raise ValueError(f"{name} CSV lacks required columns: {missing}")
-        if frame["file_name"].isna().any():
+        identifiers = frame["file_name"]
+        if identifiers.isna().any():
             raise ValueError(f"{name} CSV has missing orbit identifiers")
-        if frame["file_name"].duplicated().any():
+        if identifiers.astype(str).str.strip().eq("").any():
+            raise ValueError(f"{name} CSV has blank orbit identifiers")
+        if identifiers.duplicated().any():
             raise ValueError(f"{name} CSV has duplicate orbit identifiers")
 
     if len(original) != len(refined):
@@ -35,10 +38,11 @@ def validate_row_alignment(original: pd.DataFrame, refined: pd.DataFrame) -> int
             f"Row count mismatch: original={len(original)}, refined={len(refined)}"
         )
 
-    if not original["file_name"].equals(refined["file_name"]):
-        mismatches = (
-            original["file_name"].to_numpy() != refined["file_name"].to_numpy()
-        )
+    # Compare row values, not DataFrame index labels: CSV rows define identity.
+    mismatches = (
+        original["file_name"].to_numpy() != refined["file_name"].to_numpy()
+    )
+    if mismatches.any():
         first = int(np.flatnonzero(mismatches)[0])
         raise ValueError(
             f"Orbit identifier/order mismatch at data row {first + 1}: "
