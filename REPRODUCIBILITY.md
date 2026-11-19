@@ -114,6 +114,28 @@ The coauthor's phi1 and phi2 feature-extraction scripts respectively select the 
 
 The [unit tests](tests/test_validate_upstream_orbit_inputs.py) use tiny generated offline fixtures (15 cases). They exercise file coverage, sample selection, row ordering, duplicates, coordinate mismatches, short or malformed time series, and non-finite values. These fixtures can run in CI **without fetching the external 438 MB dataset**. The full external dataset was **not checked end-to-end** by adding this tool.
 
+## Full matrix correspondence audit (November 19, 2026)
+
+A [full GitHub Actions analysis](https://github.com/fbreve/orbits/actions/runs/44546306548) used the coauthor's pinned raw dataset commit `3c0982175952075fabb0257f0954514b0082f89a`. The dataset checkout, 11 offline matrix-analysis tests, full 22,288-file CSV structure/coordinate checks and preserved scientific-file guard **succeeded**. The attempted **raw time-series equivalence gate correctly failed**, because the archived MATLAB matrix contains something different. The [machine-readable report](https://github.com/fbreve/orbits/actions/runs/44546306548/artifacts/14539987690) records the comparison and structural checks.
+
+| Directly checked property | Outcome |
+| --- | --- |
+| MATLAB variable and shape | `orbit_series`, 22,288 × 400; MATLAB v5-format file |
+| Rows with a single repeated value in all 400 columns | **22,288 / 22,288 (exact)** |
+| Rows equal to the source-map **initial eccentricity**, in numeric orbit-file order | **22,288 / 22,288 (exact)** |
+| Rows equal to the initial semimajor axis, in numeric order | 0 / 22,288 |
+| Rows identical to time-series column 1, numeric or saved-map order | 0 / 22,288 |
+| Rows identical to time-series column 2, numeric or saved-map order | 0 / 22,288 |
+| Correspondence of all restored raw CSV initial coordinates and map IDs | **22,288 / 22,288**, checked with full raw CSV reading |
+
+The repeated eccentricity values are **bitwise equal** to the corresponding decimal-parsed initial eccentricities in the input K-Means maps. This is a complete characterization of the stored numeric matrix, **not** an inference from the first few rows. The current file cannot serve as a faithful `22,288 × 400` time-varying angular-series matrix without generating a **new** data artifact. How the archived matrix obtained this content has **not** been established; its original generator refers to a different, now absent `series/<id>.csv` layout.
+
+**Scope of impact:** `pcc_recluster_series.m` directly loads the diagnosed matrix. `pcc_recluster_series_dtw.m` instead expects an unavailable `dtw_matrix.mat`. The primary `pcc_recluster.m` uses **two orbital coordinates from the saved CSV**, not `orbit_series.mat`; its stored 2D PCC results are not invalidated by this diagnosis. No existing PCC/DTW experiment was rerun, and the publication's larger feature-extraction workflow was not re-executed.
+
+**Meaning of the optional workflow:** the audit's main goal is to **characterize and detect discrepancies in preserved inputs**, not to claim a matched time-series reproduction. A successful audit run means that the known historical repeated-eccentricity structure was verified against the pinned upstream source. A separate explicit `--require-full-match` CLI option remains available to reject the archived matrix as a raw-series substitute. An all-green audit must **never** be described as full scientific reproduction.
+
+To pursue time-series PCC or DTW experiments later, create **new, distinctly named** matrices from each upstream time-series column with their numeric IDs/order recorded, and validate those derived files without overwriting the preserved `orbit_series.mat`.
+
 ## Suggested verification gates before scientific rerun
 
 1. **Source identification:** record the exact code commits for `orbits` and the PCC/MEX implementation, and the original sample list/ordering.
@@ -122,3 +144,19 @@ The [unit tests](tests/test_validate_upstream_orbit_inputs.py) use tiny generate
 4. **Low-cost checks:** run Python stored-label evaluation on a copy and compare the existing confusion matrices and ARI with the archived logs.
 5. **Scientific run only with authorization/resources:** start with a tiny diagnostic fixture and progress to the full 100×10 PCC experiment only if the baseline outputs and computation budget warrant it.
 6. **Report:** distinguish *manifest integrity*, *stored-output comparison*, *new algorithm execution*, and *replication of published results* as different levels of evidence.
+
+
+## Full historical MATLAB-matrix correspondence (opt-in)
+
+The newly published source series can be compared with the preserved `orbit_series.mat` using [`validate_orbit_series_correspondence.py`](validate_orbit_series_correspondence.py). This is a **read-only full-data audit**. Unlike the small fixture tests and sampled-input checks above, it parses all **22,288** source orbit files and compares the complete **400-value series** against the named MATLAB variable. It tests both time-series columns (φ₁/φ₂) and both **numeric filename order** and **the stored input-map order**; no channel or ordering is assumed in advance.
+
+```bash
+python -m pip install numpy scipy h5py
+python validate_orbit_series_correspondence.py \
+  --source ../ts-saturn-orbits/orbits-dataset \
+  --report orbit-series-matrix-report.json --require-full-match
+```
+
+The script checks every raw source orbit's initial parameters against the matching `file_name` entry in the stored maps, requires 400 finite two-column observations in each file, loads the existing `orbit_series` MATLAB variable, and reports **exact-match rows**, **numerically close rows**, and maximum/mean absolute error for each candidate. The numerical criterion uses `abs(diff) <= 1e-8 + 1e-10 * abs(reference)`; it distinguishes this from bitwise equality. A missing full match is **reported as a scientific correspondence gate failure**, not repaired by reordering or modifying the original dataset. It does not establish how the matrix was originally generated, or reproduce the published clustering experiments.
+
+The workflow [`verify-orbit-series-correspondence.yml`](.github/workflows/verify-orbit-series-correspondence.yml) pins Eraldo's dataset commit `3c0982175952075fabb0257f0954514b0082f89a` and can run as a **manual GitHub Actions workflow**. It checks all raw files using a separate sparse checkout (approximately 438 MB of uncompressed CSV content), runs offline fixture tests, and uploads only a small JSON report; no bulk data are added to this repository. The normal, lightweight pull-request regression workflow is unaffected.
