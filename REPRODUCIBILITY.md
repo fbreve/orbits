@@ -1,6 +1,6 @@
 # Reproducibility and execution status
 
-**Documented: November 18, 2026**. This guide is a source review and recovery checklist. **The scientific PCC simulations, MATLAB/DTW computations and plotting workflow were not executed or experimentally validated during this maintenance.**
+**Originally documented: November 18, 2026; upstream data rechecked: November 19, 2026.** This guide is a source review and recovery checklist. **The scientific PCC simulations, MATLAB/DTW computations and plotting workflow were not executed or experimentally validated during this maintenance.**
 
 The original outputs are kept intact on `main` and in [`archive/2026-01-12-results`](https://github.com/fbreve/orbits/tree/archive/2026-01-12-results).
 
@@ -13,7 +13,7 @@ The original outputs are kept intact on `main` and in [`archive/2026-01-12-resul
 | PCC on 2D orbit conditions | `pcc_recluster.m` | Root CSV, external `pcc` / `pcc_buildgraph` functions | Data **tracked**, PCC dependency **not vendored or pinned**. No new run performed. |
 | PCC on time series | `pcc_recluster_series.m` | `orbit_series.mat` plus `dynamic_map_phi_1.csv` | First tracked, second **absent**. |
 | PCC on DTW graph | `pcc_recluster_series_dtw.m` | `dynamic_map_phi_1.csv`, `dtw_matrix.mat` | Both absent; matrix generator exists but is costly. |
-| Recreate raw `orbit_series.mat` | `read_series_csv.m` | `series/<index>.csv` for 22,288 records | Per-orbit CSV directory **absent**. |
+| Recreate raw `orbit_series.mat` | `read_series_csv.m` | `series/<index>.csv` for 22,288 records | **Raw orbit CSVs now available externally**, but the current importer expects a different folder and data layout. **Not rerun; adaptation required.** |
 | Generate entropy maps | `generate_entropy_maps.m` | `dynamic_map_phi_{1,2}.csv` and soft labels | Original-map CSVs **absent**. Saved entropy outputs are tracked. |
 | Reorder original clusters | `reorder_clusters.py` | `dynamic_map_phi_1.csv`, `dynamic_map_phi_2.csv` | Both **absent**. Output naming does not match the checked-in root tables exactly. |
 | Gnuplot maps | `plot_map*.gp` | Corresponding CSV result and Gnuplot | Scripts and many PNG results tracked. Plots not regenerated. |
@@ -83,7 +83,13 @@ The script's output names are assembled from a dataset stem and `k`. Existing ou
 
 ## External data availability
 
-The paper's Data Availability statement links to [`epmarinho/ts-saturn-orbits`](https://github.com/epmarinho/ts-saturn-orbits). The current tree checked on **November 18, 2026** has eight tracked files and does **not** include the `orbits-dataset/` directory mentioned in its README. This observation **does not prove** that data are irretrievable; they may exist in another distribution, Git release or archive. Confirm with the coauthors or maintainers before making a claim of complete source-data availability.
+The paper's Data Availability statement links to [`epmarinho/ts-saturn-orbits`](https://github.com/epmarinho/ts-saturn-orbits). **This gap was resolved on November 19, 2026:** the coauthor added the [`orbits-dataset/` CSV directory](https://github.com/epmarinho/ts-saturn-orbits/tree/3c0982175952075fabb0257f0954514b0082f89a/orbits-dataset) and [historical saved outputs](https://github.com/epmarinho/ts-saturn-orbits/tree/3c0982175952075fabb0257f0954514b0082f89a/results), at Git commit [`3c0982175952075fabb0257f0954514b0082f89a`](https://github.com/epmarinho/ts-saturn-orbits/tree/3c0982175952075fabb0257f0954514b0082f89a). The dataset directory contains **22,288 files**, with contiguous numerical identifiers from `0.csv` to `22287.csv` (approximately **437.9 MB** of raw tracked content). Each checked example begins with two initial orbital parameters followed by rows of time-series values; the upstream README describes **400 time steps** per orbit. These files need **not** be copied into this repository.
+
+The coauthor also published `results/README.md`, `results/manifest.json`, and `results/validate_results.py`, providing descriptions, SHA-256 checksums and consistency checks for the archived result files. These materials have **not** been treated as a successful fresh regeneration of the published experiment. Local Git-tree comparison identified **24 matching result/input filenames** in both repositories, of which **22 are byte-identical Git blobs** (including all same-named CSVs); the **two saved `k=24` PNGs differ**. Neither version was replaced.
+
+**Direct importer compatibility is not established:** `read_series_csv.m` currently looks for `series/<index>.csv` and reads `serie(1,2:end)'`, while upstream datasets live under `orbits-dataset/<index>.csv` and the inspected `0.csv` has the initial-parameter line followed by time samples arranged in **two columns**. Renaming a directory alone will **not** correctly recreate `orbit_series.mat`; a separately validated importer and an identified time-series column would be required. Also, `dynamic_map_phi_1.csv`, `dynamic_map_phi_2.csv`, and `dtw_matrix.mat` are **still absent by those exact filenames** from these repositories. Upstream includes other archived K-Means maps, but they must not be silently substituted as equivalent intermediates.
+
+**Evidence level:** upstream file availability and Git metadata were verified; the upstream archive validator and full MATLAB/PCC/feature-extraction experiments were **not executed** during this documentation change. For a later scientific reproduction, pin this upstream commit, confirm file-to-record/series alignment, and separately pin the PCC/MEX source revision.
 
 ## Suggested verification gates before scientific rerun
 
