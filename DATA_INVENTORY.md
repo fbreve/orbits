@@ -69,7 +69,9 @@ The repository retains:
 - `orbit_series.mat` (17,033,684 bytes)
 - `matlab_workspace.mat` (4,906,257 bytes)
 
-The script `read_series_csv.m` indicates an intended arrangement of **22,288 rows × 400 time steps** for the `orbit_series` variable. The actual internal variables, dimensionality, MATLAB serialization version and correspondence between these binary files and individual source orbit trajectories were **not independently inspected** here. Do not infer those properties from the file names alone.
+**Direct binary inspection, November 19, 2026:** the variable `orbit_series` in `orbit_series.mat` has shape **22,288 × 400** in MATLAB v5-compatible serialization. **Every row is exactly constant across its 400 columns** (22,288/22,288), and the repeated double-precision value in row `i` is **bit-for-bit equal** to the *initial eccentricity* recorded for `i.csv` in the two stored input maps (numeric orbit-file order). The matrix is **not** either of the two time-varying columns found in the coauthor's newly published raw CSV files: none of four tested channel/order combinations matched even one complete row within tolerance. Full comparison: [audit report](REPRODUCIBILITY.md#full-matrix-correspondence-audit-november-19-2026) and [workflow output](https://github.com/fbreve/orbits/actions/runs/44546306548).
+
+This diagnosis is about the **content of this archived file**, not a proof of why it was generated or whether any historical scientific run ever used it. The primary 2D `pcc_recluster.m` script does **not** load this matrix; `pcc_recluster_series.m` does. **The internal contents of the separate `matlab_workspace.mat` have not been independently inspected.** Do not replace `orbit_series.mat` silently; treat restoration of genuine time-series matrices as a new, separately identified scientific data product.
 
 ## Missing or external inputs
 

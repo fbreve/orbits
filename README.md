@@ -58,6 +58,12 @@ See `logs/phi_1_eval_python.log` and `logs/phi_2_eval_python.log` for the saved 
 
 Other checked-in result files cover `k = 4, 8, 12, 20, 24`. The **current** `pcc_recluster.m` is set to `k=24`; the presence of other outputs does **not** mean this version was rerun for all those configurations.
 
+## Important finding about the historical MATLAB matrix
+
+**Verified on November 19, 2026:** the archived `orbit_series.mat` contains a `22288 × 400` numeric variable named `orbit_series`, but **all 400 values in every row are identical**. In numeric orbit-file order (`0.csv` through `22287.csv`), each row exactly repeats that orbit's **initial eccentricity**, rather than either time-varying column in the coauthor's input CSV. This held for **22,288/22,288 rows with bitwise-equal floating-point values**; none of the four raw-series channel/order hypotheses matched. The historical MATLAB matrix is therefore **not an interchangeable copy of the restored time-series dataset**.
+
+The [input-audit report](REPRODUCIBILITY.md#full-matrix-correspondence-audit-november-19-2026) documents this result and its limits. It applies to the exploratory `pcc_recluster_series.m` path, which loads `orbit_series.mat`; the main **2D coordinate-based** `pcc_recluster.m` uses the existing K-Means map columns instead and is not affected by this matrix diagnosis. No cause for the historical matrix content, and no exact historical runtime provenance, is asserted.
+
 ## Checking the newly published upstream orbit inputs
 
 A **read-only, standard-library Python checker** (`validate_upstream_orbit_inputs.py`) validates the two initial K-Means maps against a **separately cloned** [upstream dataset](https://github.com/epmarinho/ts-saturn-orbits/tree/3c0982175952075fabb0257f0954514b0082f89a/orbits-dataset). It checks all mapped orbit identifiers, coordinate consistency, all CSV filenames, and a deterministic sample of file headers. Use `--full-series` to additionally inspect 400 two-column samples per selected file; `--all` extends these checks to every orbit. No raw data download or PCC run occurs automatically. See [REPRODUCIBILITY.md](REPRODUCIBILITY.md#optional-read-only-upstream-orbit-checker).

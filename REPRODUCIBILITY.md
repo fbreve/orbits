@@ -114,6 +114,28 @@ The coauthor's phi1 and phi2 feature-extraction scripts respectively select the 
 
 The [unit tests](tests/test_validate_upstream_orbit_inputs.py) use tiny generated offline fixtures (15 cases). They exercise file coverage, sample selection, row ordering, duplicates, coordinate mismatches, short or malformed time series, and non-finite values. These fixtures can run in CI **without fetching the external 438 MB dataset**. The full external dataset was **not checked end-to-end** by adding this tool.
 
+## Full matrix correspondence audit (November 19, 2026)
+
+A [full GitHub Actions analysis](https://github.com/fbreve/orbits/actions/runs/44546306548) used the coauthor's pinned raw dataset commit `3c0982175952075fabb0257f0954514b0082f89a`. The dataset checkout, 11 offline matrix-analysis tests, full 22,288-file CSV structure/coordinate checks and preserved scientific-file guard **succeeded**. The attempted **raw time-series equivalence gate correctly failed**, because the archived MATLAB matrix contains something different. The [machine-readable report](https://github.com/fbreve/orbits/actions/runs/44546306548/artifacts/14539987690) records the comparison and structural checks.
+
+| Directly checked property | Outcome |
+| --- | --- |
+| MATLAB variable and shape | `orbit_series`, 22,288 × 400; MATLAB v5-format file |
+| Rows with a single repeated value in all 400 columns | **22,288 / 22,288 (exact)** |
+| Rows equal to the source-map **initial eccentricity**, in numeric orbit-file order | **22,288 / 22,288 (exact)** |
+| Rows equal to the initial semimajor axis, in numeric order | 0 / 22,288 |
+| Rows identical to time-series column 1, numeric or saved-map order | 0 / 22,288 |
+| Rows identical to time-series column 2, numeric or saved-map order | 0 / 22,288 |
+| Correspondence of all restored raw CSV initial coordinates and map IDs | **22,288 / 22,288**, checked with full raw CSV reading |
+
+The repeated eccentricity values are **bitwise equal** to the corresponding decimal-parsed initial eccentricities in the input K-Means maps. This is a complete characterization of the stored numeric matrix, **not** an inference from the first few rows. The current file cannot serve as a faithful `22,288 × 400` time-varying angular-series matrix without generating a **new** data artifact. How the archived matrix obtained this content has **not** been established; its original generator refers to a different, now absent `series/<id>.csv` layout.
+
+**Scope of impact:** `pcc_recluster_series.m` directly loads the diagnosed matrix. `pcc_recluster_series_dtw.m` instead expects an unavailable `dtw_matrix.mat`. The primary `pcc_recluster.m` uses **two orbital coordinates from the saved CSV**, not `orbit_series.mat`; its stored 2D PCC results are not invalidated by this diagnosis. No existing PCC/DTW experiment was rerun, and the publication's larger feature-extraction workflow was not re-executed.
+
+**Meaning of the optional workflow:** the audit's main goal is to **characterize and detect discrepancies in preserved inputs**, not to claim a matched time-series reproduction. A successful audit run means that the known historical repeated-eccentricity structure was verified against the pinned upstream source. A separate explicit `--require-full-match` CLI option remains available to reject the archived matrix as a raw-series substitute. An all-green audit must **never** be described as full scientific reproduction.
+
+To pursue time-series PCC or DTW experiments later, create **new, distinctly named** matrices from each upstream time-series column with their numeric IDs/order recorded, and validate those derived files without overwriting the preserved `orbit_series.mat`.
+
 ## Suggested verification gates before scientific rerun
 
 1. **Source identification:** record the exact code commits for `orbits` and the PCC/MEX implementation, and the original sample list/ordering.

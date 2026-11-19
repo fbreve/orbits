@@ -1,4 +1,4 @@
-name: Compare historical MATLAB orbit series with restored upstream CSVs
+name: Audit archived MATLAB matrix against restored orbit source data
 
 on:
   workflow_dispatch:
@@ -46,12 +46,27 @@ jobs:
         run: |
           test "$(git -C upstream-snapshot rev-parse HEAD)" = "3c0982175952075fabb0257f0954514b0082f89a"
 
-      - name: Check all raw orbits against historical MATLAB matrix
+      - name: Characterize every raw orbit against the old MATLAB matrix
         run: |
           python validate_orbit_series_correspondence.py \
             --source upstream-snapshot/orbits-dataset \
-            --report validation-output/orbit-series-matrix-report.json \
-            --require-full-match
+            --report validation-output/orbit-series-matrix-report.json
+
+      - name: Confirm known historical repeated-eccentricity structure
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("validation-output/orbit-series-matrix-report.json").read_text())
+          n = 22288
+          diag = data["mat_diagnostics"]
+          assert data["input_csvs_checked"] == n
+          assert diag["constant_rows_exact"] == n
+          assert diag["initial_condition_hypotheses"]["eccentricity / numeric order"]["constant_parameter_exact_rows"] == n
+          assert not data["any_close_match"]
+          print("Confirmed: historical MATLAB matrix repeats initial eccentricity,")
+          print("not either original time-varying source channel. This is NOT PCC reproduction.")
+          PY
 
       - name: Preserve small JSON report even if correspondence fails
         if: always()
