@@ -136,6 +136,33 @@ The repeated eccentricity values are **bitwise equal** to the corresponding deci
 
 To pursue time-series PCC or DTW experiments later, create **new, distinctly named** matrices from each upstream time-series column with their numeric IDs/order recorded, and validate those derived files without overwriting the preserved `orbit_series.mat`.
 
+## Constructing separate phi1 and phi2 MATLAB matrices
+
+Use [\`build_derived_orbit_matrices.py\`](build_derived_orbit_matrices.py) to construct **new**, independently validated MATLAB v5 files from the coauthor's [22,288 orbit CSVs](https://github.com/epmarinho/ts-saturn-orbits/tree/3c0982175952075fabb0257f0954514b0082f89a/orbits-dataset). This does **not** reconstruct or overwrite historical \`orbit_series.mat\`, nor does it imply a PCC/DTW reproduction.
+
+The coauthor's feature readers use **column 1 for φ₁** and **column 2 for φ₂** of each time-series block (after the separate two-value initial-parameter line). Input filename \`i.csv\` maps to output **MATLAB row \`i+1\`**, for numeric IDs \`0..22287\`, not the lexicographic row order in saved cluster maps. The builder checks both map files for complete unique ID coverage and matching coordinates, then validates every upstream file's initial conditions and its **400 two-column finite observations**.
+
+From the \`fbreve/orbits\` checkout, with a sibling checkout of the [pinned upstream repository](https://github.com/epmarinho/ts-saturn-orbits/tree/3c0982175952075fabb0257f0954514b0082f89a):
+
+\`\`\`bash
+python -m pip install numpy scipy
+python build_derived_orbit_matrices.py \\
+  --source ../ts-saturn-orbits/orbits-dataset \\
+  --output-dir derived-orbit-series
+\`\`\`
+
+The builder will **refuse to overwrite** an existing derived MAT or manifest. The outputs, under the chosen directory and **not added to Git**, are:
+
+| New output | MATLAB variable | Content |
+| --- | --- | --- |
+| \`orbit_series_phi1_numeric_ids.mat\` | \`orbit_series_phi1\` | 22,288 × 400 double values; first time-series column |
+| \`orbit_series_phi2_numeric_ids.mat\` | \`orbit_series_phi2\` | 22,288 × 400 double values; second time-series column |
+| \`DERIVED_ORBIT_SERIES_MANIFEST.json\` | — | Source commit, input-map SHA-256, row identity, per-channel full-value digest, MAT SHA-256, sizes and exact-readback counts |
+
+Both MAT files contain \`orbit_ids\`, \`semimajor_axis\` and \`eccentricity\` vectors aligned to their matrix rows, plus source-commit, source-column and row-order metadata. Each generated file is reloaded by SciPy and compared **exactly** against the corresponding input series before its SHA-256 is recorded. The generated series are **derived input artifacts** only; the stored cluster results were not recomputed.
+
+The separately runnable [GitHub Actions builder](.github/workflows/build-derived-orbit-matrices.yml) runs pinned input extraction and verification on the full 438 MB collection without changing this repository. It uploads **one artifact for each angle**, together with the same provenance manifest. Artifacts are temporary (**7-day GitHub retention**) and are **not permanent dataset storage**. The normal lightweight PR CI does not fetch the raw dataset. If these files are used in future PCC or DTW experiments, freeze the derived MAT file hashes, external PCC version and experiment parameters separately.
+
 ## Suggested verification gates before scientific rerun
 
 1. **Source identification:** record the exact code commits for `orbits` and the PCC/MEX implementation, and the original sample list/ordering.
