@@ -108,6 +108,21 @@ class MatCorrespondenceTests(unittest.TestCase):
         with self.assertRaisesRegex(InputValidationError, "non-finite"):
             self.check()
 
+    def test_constant_eccentricity_diagnostic(self):
+        from validate_orbit_series_correspondence import inspect_mat_structure
+        matrix = np.repeat(np.array([[0.0], [0.01], [0.02], [0.03]]), 400, axis=1)
+        coordinates = {f"{i}.csv": (1000+i, i/100) for i in range(4)}
+        d = inspect_mat_structure(matrix, coordinates)
+        self.assertEqual(d["constant_rows_exact"], 4)
+        self.assertEqual(
+            d["initial_condition_hypotheses"]["eccentricity / numeric order"]
+            ["constant_parameter_exact_rows"], 4
+        )
+        self.assertEqual(
+            d["initial_condition_hypotheses"]["semimajor_axis / numeric order"]
+            ["constant_parameter_exact_rows"], 0
+        )
+
     def test_wrong_mat_shape_is_rejected(self):
         self.save(np.ones((3, 4)))
         with self.assertRaisesRegex(InputValidationError, "Unexpected"):

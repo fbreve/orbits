@@ -121,6 +121,51 @@ def _compare(mat, candidate, label, *, rtol=1e-10, atol=1e-8):
     }
 
 
+def inspect_mat_structure(mat, maps):
+    """Report whether the MATLAB rows are constants or initial orbit parameters.
+
+    This is a diagnostic, not an extra hypothesis that the old matrix was
+    intended to hold raw phi1/phi2 series. It does not alter the MAT file.
+    """
+    n = mat.shape[0]
+    numeric = [f"{i}.csv" for i in range(n)]
+    map_order = list(maps)
+    spread = np.ptp(mat, axis=1)
+    stats = {
+        "constant_rows_exact": int(np.count_nonzero(
+            np.all(mat == mat[:, :1], axis=1)
+        )),
+        "max_row_range": float(np.max(spread)),
+        "mean_row_range": float(np.mean(spread)),
+        "global_min": float(np.min(mat)),
+        "global_max": float(np.max(mat)),
+        "first_three_mat_rows": [
+            {
+                "row": i,
+                "first_five": mat[i, :5].tolist(),
+                "row_min": float(np.min(mat[i])),
+                "row_max": float(np.max(mat[i])),
+            } for i in range(min(3, n))
+        ],
+        "initial_condition_hypotheses": {},
+    }
+    for ordering, names in (("numeric", numeric), ("saved_map", map_order)):
+        for axis, pos in (("semimajor_axis", 0), ("eccentricity", 1)):
+            references = np.array([maps[name][pos] for name in names])
+            matches = np.all(
+                np.isclose(mat, references[:, None], rtol=1e-12, atol=1e-10),
+                axis=1,
+            )
+            exact = np.all(mat == references[:, None], axis=1)
+            stats["initial_condition_hypotheses"][
+                f"{axis} / {ordering} order"
+            ] = {
+                "constant_parameter_close_rows": int(np.count_nonzero(matches)),
+                "constant_parameter_exact_rows": int(np.count_nonzero(exact)),
+            }
+    return stats
+
+
 def analyze(mat_path, source_dir, maps_dir, *, expected_count=EXPECTED_ORBITS):
     """Analyze four named hypotheses rather than guessing the MATLAB origin."""
     maps_dir = Path(maps_dir)
@@ -146,6 +191,7 @@ def analyze(mat_path, source_dir, maps_dir, *, expected_count=EXPECTED_ORBITS):
         "map_first_ids": list(phi1)[:8],
         **metadata,
         "hypotheses": [],
+        "mat_diagnostics": inspect_mat_structure(mat, phi1),
     }
     for channel, values in (("first", raw1), ("second", raw2)):
         result["hypotheses"].append(
