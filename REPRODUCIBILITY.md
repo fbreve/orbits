@@ -91,6 +91,29 @@ The coauthor also published `results/README.md`, `results/manifest.json`, and `r
 
 **Evidence level:** upstream file availability and Git metadata were verified; the upstream archive validator and full MATLAB/PCC/feature-extraction experiments were **not executed** during this documentation change. For a later scientific reproduction, pin this upstream commit, confirm file-to-record/series alignment, and separately pin the PCC/MEX source revision.
 
+## Optional read-only upstream orbit checker
+
+The standalone [`validate_upstream_orbit_inputs.py`](validate_upstream_orbit_inputs.py) verifies input **identity and structure** without changing the original `read_series_csv.m`, `orbit_series.mat` or any scientific output. Only Python's **standard library** is required.
+
+If you already have local checkouts of both repositories:
+
+```bash
+# From the fbreve/orbits checkout; adjust the sibling checkout path as needed.
+python validate_upstream_orbit_inputs.py ../ts-saturn-orbits/orbits-dataset
+python validate_upstream_orbit_inputs.py ../ts-saturn-orbits/orbits-dataset --sample 32 --full-series
+
+# Optional, substantially more I/O: check every orbit's 400 two-column samples.
+python validate_upstream_orbit_inputs.py ../ts-saturn-orbits/orbits-dataset --all --full-series
+```
+
+The checker always validates **22,288 unique, contiguous orbit identifiers**, matching `file_name` coverage across both saved input maps, consistent finite initial conditions between φ₁ and φ₂, and the complete set of numeric source CSV filenames. By default it opens only **32 deterministically selected** orbit files and validates their **first lines** against map coordinates. `--full-series` checks exactly 400 finite two-column samples in each selected file; `--all` selects **every** source orbit. A header-only sampled success **does not prove** the 400-row structure of unsampled files; a full-series check validates syntax and finite values, **not** agreement with the old binary `orbit_series.mat` or with published model outputs.
+
+The coauthor's phi1 and phi2 feature-extraction scripts respectively select the **first** and **second** columns of the time-series rows, while the first line has two **orbital initial conditions**. The existing local `read_series_csv.m` expects a **different rectangular layout** and must not be used directly on these files.
+
+**Important ordering caveat:** `K-Means_dynamic_map_phi_1_reordered.csv` and `K-Means_dynamic_map_phi_2_reordered.csv` are **lexicographically sorted by `file_name`**, starting `0.csv`, `1.csv`, `10.csv`, `100.csv` ...; the numeric series order `0.csv`, `1.csv`, `2.csv` ... is different. Use identifiers when joining series and maps, not row position. The checker does not reorder or write a replacement `.mat` file.
+
+The [unit tests](tests/test_validate_upstream_orbit_inputs.py) use tiny generated offline fixtures (15 cases). They exercise file coverage, sample selection, row ordering, duplicates, coordinate mismatches, short or malformed time series, and non-finite values. These fixtures can run in CI **without fetching the external 438 MB dataset**. The full external dataset was **not checked end-to-end** by adding this tool.
+
 ## Suggested verification gates before scientific rerun
 
 1. **Source identification:** record the exact code commits for `orbits` and the PCC/MEX implementation, and the original sample list/ordering.
