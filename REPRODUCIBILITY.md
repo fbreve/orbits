@@ -122,3 +122,19 @@ The [unit tests](tests/test_validate_upstream_orbit_inputs.py) use tiny generate
 4. **Low-cost checks:** run Python stored-label evaluation on a copy and compare the existing confusion matrices and ARI with the archived logs.
 5. **Scientific run only with authorization/resources:** start with a tiny diagnostic fixture and progress to the full 100×10 PCC experiment only if the baseline outputs and computation budget warrant it.
 6. **Report:** distinguish *manifest integrity*, *stored-output comparison*, *new algorithm execution*, and *replication of published results* as different levels of evidence.
+
+
+## Full historical MATLAB-matrix correspondence (opt-in)
+
+The newly published source series can be compared with the preserved `orbit_series.mat` using [`validate_orbit_series_correspondence.py`](validate_orbit_series_correspondence.py). This is a **read-only full-data audit**. Unlike the small fixture tests and sampled-input checks above, it parses all **22,288** source orbit files and compares the complete **400-value series** against the named MATLAB variable. It tests both time-series columns (φ₁/φ₂) and both **numeric filename order** and **the stored input-map order**; no channel or ordering is assumed in advance.
+
+```bash
+python -m pip install numpy scipy h5py
+python validate_orbit_series_correspondence.py \
+  --source ../ts-saturn-orbits/orbits-dataset \
+  --report orbit-series-matrix-report.json --require-full-match
+```
+
+The script checks every raw source orbit's initial parameters against the matching `file_name` entry in the stored maps, requires 400 finite two-column observations in each file, loads the existing `orbit_series` MATLAB variable, and reports **exact-match rows**, **numerically close rows**, and maximum/mean absolute error for each candidate. The numerical criterion uses `abs(diff) <= 1e-8 + 1e-10 * abs(reference)`; it distinguishes this from bitwise equality. A missing full match is **reported as a scientific correspondence gate failure**, not repaired by reordering or modifying the original dataset. It does not establish how the matrix was originally generated, or reproduce the published clustering experiments.
+
+The workflow [`verify-orbit-series-correspondence.yml`](.github/workflows/verify-orbit-series-correspondence.yml) pins Eraldo's dataset commit `3c0982175952075fabb0257f0954514b0082f89a` and can run as a **manual GitHub Actions workflow**. It checks all raw files using a separate sparse checkout (approximately 438 MB of uncompressed CSV content), runs offline fixture tests, and uploads only a small JSON report; no bulk data are added to this repository. The normal, lightweight pull-request regression workflow is unaffected.

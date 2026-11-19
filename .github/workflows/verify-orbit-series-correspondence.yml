@@ -1,0 +1,71 @@
+name: Compare historical MATLAB orbit series with restored upstream CSVs
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - experiment/orbit-series-matrix-check
+    paths:
+      - '.github/workflows/verify-orbit-series-correspondence.yml'
+      - 'validate_orbit_series_correspondence.py'
+      - 'tests/test_orbit_series_correspondence.py'
+
+permissions:
+  contents: read
+
+jobs:
+  crosscheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out preserved PCC/orbits sources
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install matrix analysis dependencies
+        run: python -m pip install --disable-pip-version-check numpy==2.3.5 scipy==1.16.3 h5py==3.15.1
+
+      - name: Offline unit tests for candidate comparison
+        run: python -m unittest discover -s tests -p 'test_orbit_series_correspondence.py' -v
+
+      - name: Retrieve pinned source orbits (large read-only checkout)
+        uses: actions/checkout@v4
+        with:
+          repository: epmarinho/ts-saturn-orbits
+          ref: 3c0982175952075fabb0257f0954514b0082f89a
+          path: upstream-snapshot
+          sparse-checkout: orbits-dataset
+          filter: blob:none
+          persist-credentials: false
+
+      - name: Confirm exact upstream source commit
+        run: |
+          test "$(git -C upstream-snapshot rev-parse HEAD)" = "3c0982175952075fabb0257f0954514b0082f89a"
+
+      - name: Check all raw orbits against historical MATLAB matrix
+        run: |
+          python validate_orbit_series_correspondence.py \
+            --source upstream-snapshot/orbits-dataset \
+            --report validation-output/orbit-series-matrix-report.json \
+            --require-full-match
+
+      - name: Preserve small JSON report even if correspondence fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orbit-matrix-correspondence-report
+          path: validation-output/orbit-series-matrix-report.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Verify no tracked scientific files changed
+        if: always()
+        run: |
+          git diff --exit-code -- '*.csv' '*.mat' '*.png' '*.log' || {
+            echo 'Tracked scientific artifacts unexpectedly modified'
+            exit 1
+          }
