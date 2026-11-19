@@ -1,0 +1,111 @@
+name: Build and verify derived phi1/phi2 orbit matrices
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - experiment/build-verified-phi1-phi2-matrices
+    paths:
+      - 'build_derived_orbit_matrices.py'
+      - 'tests/test_build_derived_orbit_matrices.py'
+      - '.github/workflows/build-derived-orbit-matrices.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out preserved PCC/orbits sources
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install matrix export dependencies
+        run: python -m pip install --disable-pip-version-check numpy==2.3.5 scipy==1.16.3
+
+      - name: Validate export with small independent fixtures
+        run: python -m unittest discover -s tests -p 'test_build_derived_orbit_matrices.py' -v
+
+      - name: Fetch original source orbits at pinned coauthor commit
+        uses: actions/checkout@v4
+        with:
+          repository: epmarinho/ts-saturn-orbits
+          ref: 3c0982175952075fabb0257f0954514b0082f89a
+          path: upstream-snapshot
+          sparse-checkout: orbits-dataset
+          filter: blob:none
+          persist-credentials: false
+
+      - name: Confirm source revision
+        run: |
+          test "$(git -C upstream-snapshot rev-parse HEAD)" = "3c0982175952075fabb0257f0954514b0082f89a"
+
+      - name: Generate and independently reload both MATLAB matrices
+        run: |
+          python build_derived_orbit_matrices.py \
+            --source upstream-snapshot/orbits-dataset \
+            --output-dir derived-orbit-series \
+            > derived-build-report.json
+
+      - name: Confirm complete and exact independent per-channel readback
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          from scipy.io import loadmat
+          import numpy as np
+
+          manifest = json.loads(Path("derived-orbit-series/DERIVED_ORBIT_SERIES_MANIFEST.json").read_text())
+          assert manifest["upstream_commit"] == "3c0982175952075fabb0257f0954514b0082f89a"
+          assert manifest["validated_inputs"]["per_orbit_csv_files"] == 22288
+          assert manifest["row_order"] == "numeric_file_id_ascending"
+          for phi in (1, 2):
+              entry = manifest["generated"][f"phi{phi}"]
+              path = Path("derived-orbit-series") / entry["file"]
+              assert hashlib.sha256(path.read_bytes()).hexdigest() == entry["mat_file_sha256"]
+              data = loadmat(path)
+              values = data[f"orbit_series_phi{phi}"]
+              assert values.shape == (22288, 400) and np.isfinite(values).all()
+              assert entry["exact_source_rows_after_readback"] == 22288
+              assert np.array_equal(data["orbit_ids"].ravel(), np.arange(22288))
+              digest = hashlib.sha256(np.asarray(values, dtype="<f8", order="C").tobytes(order="C")).hexdigest()
+              assert digest == entry["variable_values_sha256_le_float64_row_major"]
+              print(f"phi{phi}: {values.shape}, 22288 verified rows, SHA-256 {entry['mat_file_sha256']}")
+          assert (Path("orbit_series.mat").is_file()
+                  and not Path("derived-orbit-series/orbit_series.mat").exists())
+          PY
+
+      - name: Upload verified phi1 MATLAB matrix
+        uses: actions/upload-artifact@v4
+        with:
+          name: derived-orbit-series-phi1
+          path: |
+            derived-orbit-series/orbit_series_phi1_numeric_ids.mat
+            derived-orbit-series/DERIVED_ORBIT_SERIES_MANIFEST.json
+          retention-days: 7
+          compression-level: 0
+
+      - name: Upload verified phi2 MATLAB matrix
+        uses: actions/upload-artifact@v4
+        with:
+          name: derived-orbit-series-phi2
+          path: |
+            derived-orbit-series/orbit_series_phi2_numeric_ids.mat
+            derived-orbit-series/DERIVED_ORBIT_SERIES_MANIFEST.json
+          retention-days: 7
+          compression-level: 0
+
+      - name: Confirm historical scientific tracked files unchanged
+        if: always()
+        run: |
+          git diff --exit-code -- '*.csv' '*.mat' '*.png' '*.log' || {
+            echo 'Historical scientific file was unexpectedly modified'
+            exit 1
+          }

@@ -70,6 +70,10 @@ A **read-only, standard-library Python checker** (`validate_upstream_orbit_input
 
 **Ordering matters:** both stored K-Means input maps are sorted **lexicographically by `file_name`** (`0.csv`, `1.csv`, `10.csv`, `100.csv`, ...), not in the numeric order of upstream filenames. Match by `file_name`, never by CSV row index. The original `read_series_csv.m` was **not** modified.
 
+## Derived, validated per-angle input matrices
+
+The [matrix builder](build_derived_orbit_matrices.py) converts the source CSVs into **two newly named MATLAB files**, one for φ₁ and one for φ₂, with numeric `orbit_ids`, initial coordinates, provenance and a SHA-256 manifest. It validates all input files and independently reloads the saved matrices for exact row-by-row comparison. The old `orbit_series.mat` is **never overwritten**. Instructions and temporary GitHub Actions artifacts are described in [REPRODUCIBILITY.md](REPRODUCIBILITY.md#constructing-separate-phi1-and-phi2-matlab-matrices).
+
 ## Reading and evaluating stored files
 
 For the **stored `k=24` labels**, the Python comparison script can be invoked from the repository root in an environment with `numpy`, `pandas`, and `scikit-learn`:
