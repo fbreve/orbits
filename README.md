@@ -58,6 +58,12 @@ See `logs/phi_1_eval_python.log` and `logs/phi_2_eval_python.log` for the saved 
 
 Other checked-in result files cover `k = 4, 8, 12, 20, 24`. The **current** `pcc_recluster.m` is set to `k=24`; the presence of other outputs does **not** mean this version was rerun for all those configurations.
 
+## Checking the newly published upstream orbit inputs
+
+A **read-only, standard-library Python checker** (`validate_upstream_orbit_inputs.py`) validates the two initial K-Means maps against a **separately cloned** [upstream dataset](https://github.com/epmarinho/ts-saturn-orbits/tree/3c0982175952075fabb0257f0954514b0082f89a/orbits-dataset). It checks all mapped orbit identifiers, coordinate consistency, all CSV filenames, and a deterministic sample of file headers. Use `--full-series` to additionally inspect 400 two-column samples per selected file; `--all` extends these checks to every orbit. No raw data download or PCC run occurs automatically. See [REPRODUCIBILITY.md](REPRODUCIBILITY.md#optional-read-only-upstream-orbit-checker).
+
+**Ordering matters:** both stored K-Means input maps are sorted **lexicographically by `file_name`** (`0.csv`, `1.csv`, `10.csv`, `100.csv`, ...), not in the numeric order of upstream filenames. Match by `file_name`, never by CSV row index. The original `read_series_csv.m` was **not** modified.
+
 ## Reading and evaluating stored files
 
 For the **stored `k=24` labels**, the Python comparison script can be invoked from the repository root in an environment with `numpy`, `pandas`, and `scikit-learn`:
