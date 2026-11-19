@@ -34,7 +34,7 @@ The MATLAB import function `read_data.m` explicitly expects four columns with th
 
 The main PCC script constructs its graph from **columns 1–2**, reads the initial labels from **column 4**, and writes a copy of the table after replacing column 4 with the refined cluster assignments.
 
-**Important:** row identity must be preserved. The evaluation scripts currently compare the two label columns **by row position**, not by joining on `file_name`.
+**Important:** row identity must be preserved. The Python evaluator compares values by row position **only after verifying that every `file_name` is unique and that the two input files have the same identifiers in the same order**. The separate, unchanged MATLAB evaluator still compares by row position and may truncate unequal lengths; see [REPRODUCIBILITY.md](REPRODUCIBILITY.md).
 
 ## Stored results
 
@@ -80,7 +80,11 @@ Some existing scripts refer to inputs **not tracked** in the January 2026 branch
 - `series/0.csv`, `series/1.csv`, etc., expected by `read_series_csv.m`
 - External MATLAB definitions of `pcc()` and `pcc_buildgraph()` and the related PCC implementation/environment
 
-The main article links to [`epmarinho/ts-saturn-orbits`](https://github.com/epmarinho/ts-saturn-orbits) as a reproducibility repository. **On November 18, 2026**, its current Git tree contains eight tracked files and **does not contain the `orbits-dataset/` directory described in its README**. Its internal code/configuration is still useful, but the full dataset's availability should be confirmed with the source maintainer; this repository should not be described as independently providing all upstream raw inputs.
+The main article links to [`epmarinho/ts-saturn-orbits`](https://github.com/epmarinho/ts-saturn-orbits). On **November 19, 2026**, the author added the missing [`orbits-dataset/` directory](https://github.com/epmarinho/ts-saturn-orbits/tree/3c0982175952075fabb0257f0954514b0082f89a/orbits-dataset) with **22,288** individual, consecutively numbered orbit CSV files and [archived clustering outputs](https://github.com/epmarinho/ts-saturn-orbits/tree/3c0982175952075fabb0257f0954514b0082f89a/results) (source commit [`3c0982175952`](https://github.com/epmarinho/ts-saturn-orbits/tree/3c0982175952075fabb0257f0954514b0082f89a)). The series are available **externally**, not tracked in the frozen January 2026 `orbits` snapshot.
+
+The current importer `read_series_csv.m` expects `series/<index>.csv` with an incompatible layout for the inspected upstream sample; it is **not validated as a direct reader** of those newly published CSVs. Other unresolved intermediates still include `dynamic_map_phi_1.csv` / `dynamic_map_phi_2.csv` by those exact names and the generated `dtw_matrix.mat`. Some archived upstream maps have **different names or ambiguous run provenance**, so substituting them requires separate scientific verification.
+
+The upstream [result inventory, manifest and validator](https://github.com/epmarinho/ts-saturn-orbits/tree/3c0982175952075fabb0257f0954514b0082f89a/results/README.md) document its own saved outputs. Of **24 same-named input/results files** overlapping with this repository, **22 have identical Git blob hashes** (all matching CSVs) and the **two `k=24` PNG map files differ**. Both repositories' versions have been preserved; no figure or data overwrite is implied. No end-to-end clustering or PCC regeneration was performed.
 
 ## Checksums
 
